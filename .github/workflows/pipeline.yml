@@ -28,7 +28,7 @@ jobs:
     needs: deploy_devnet
     environment:
       name: testnet
-      url: https://testnet.example.com
+      url:  https://testnet.sixsigmasports.app
     steps:
       - name: Deploy to testnet
         run: echo "Deploying to testnet"
@@ -39,7 +39,7 @@ jobs:
     needs: deploy_testnet
     environment:
       name: mainnet
-      url: https://mainnet.example.com
+      url:  https://sixsigmasports.app
     steps:
       - name: Deploy to mainnet
         run: echo "Deploying to mainnet"
