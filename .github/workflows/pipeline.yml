@@ -1,0 +1,71 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  commit:
+    name: Commit Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run commit validation
+        run: echo "Run commit checks here (lint, unit tests, etc.)"
+
+  push:
+    name: Push Build
+    runs-on: ubuntu-latest
+    needs: commit
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build for main
+        run: echo "Build artifacts for main branch"
+
+  deploy_devnet:
+    name: Deploy Devnet
+    runs-on: ubuntu-latest
+    needs: push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: devnet
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to devnet
+        run: echo "Deploying to devnet"
+
+  deploy_testnet:
+    name: Deploy Testnet
+    runs-on: ubuntu-latest
+    needs: deploy_devnet
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: testnet
+      url: https://testnet.example.com
+      # Configure required reviewers for the testnet environment in repository settings
+      # so this job waits for an approved reviewer before resuming (the runner is idle
+      # until that approval happens).
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to testnet
+        run: echo "Deploying to testnet"
+
+  deploy_mainnet:
+    name: Deploy Mainnet
+    runs-on: ubuntu-latest
+    needs: deploy_testnet
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: mainnet
+      url: https://mainnet.example.com
+      # Configure required reviewers for the mainnet environment so the deployment
+      # pauses until an authorized teammate approves the run.
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to mainnet
+        run: echo "Deploying to mainnet"
