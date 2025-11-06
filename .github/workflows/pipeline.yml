@@ -1,5 +1,5 @@
 name: CI/CD Pipeline
-run-name: "CI/CD Pipeline - target: ${{ github.event.inputs.release_target }}"
+run-name: "CI/CD Pipeline - target: ${{ github.event.inputs.release_target }} backend: ${{ github.event.inputs.six-sigma-kolme-ref}}"
 
 on:
   workflow_dispatch:
@@ -13,6 +13,10 @@ on:
           - devnet
           - testnet
           - mainnet
+      six-sigma-kolme-ref:
+        description: "Git ref for six-sigma-kolme deployment"
+        required: false
+        default: main
 
 jobs:
   push:
@@ -21,6 +25,10 @@ jobs:
     steps:
       - name: Build and publish images
         run: echo "Publishing images..."
+      - name: Show selected refs
+        run: |
+          echo "six-sigma-kolme ref -> ${{ github.event.inputs['six-sigma-kolme-ref'] || 'main' }}"
+          echo "sixsigmasports ref  -> ${{ github.event.inputs['sixsigmasports-ref'] || 'main' }}"
 
   deploy_devnet:
     name: Deploy Devnet
