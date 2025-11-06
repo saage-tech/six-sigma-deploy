@@ -18,6 +18,10 @@ jobs:
     environment:
       name: devnet
       url: https://dev.sixsigmasports.app
+
+    concurrency:
+      group: devnet
+
     steps:
       - name: Deploy to devnet
         run: echo "Deploying to devnet"
@@ -28,7 +32,11 @@ jobs:
     needs: deploy_devnet
     environment:
       name: testnet
-      url:  https://testnet.sixsigmasports.app
+      url: https://testnet.sixsigmasports.app
+
+    concurrency:
+      group: testnet
+
     steps:
       - name: Deploy to testnet
         run: echo "Deploying to testnet"
@@ -39,7 +47,11 @@ jobs:
     needs: deploy_testnet
     environment:
       name: mainnet
-      url:  https://sixsigmasports.app
+      url: https://sixsigmasports.app
+
+    concurrency:
+      group: mainnet
+
     steps:
       - name: Deploy to mainnet
         run: echo "Deploying to mainnet"
