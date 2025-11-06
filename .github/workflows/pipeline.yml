@@ -2,6 +2,16 @@ name: CI/CD Pipeline
 
 on:
   workflow_dispatch:
+    inputs:
+      release_target:
+        description: "Furthest environment to deploy to"
+        required: true
+        default: devnet
+        type: choice
+        options:
+          - devnet
+          - testnet
+          - mainnet
 
 jobs:
   push:
@@ -23,6 +33,8 @@ jobs:
       group: devnet
 
     steps:
+      - name: publish-images
+        run: echo "Publishing images..."
       - name: Deploy to devnet
         run: echo "Deploying to devnet"
 
@@ -30,6 +42,7 @@ jobs:
     name: Deploy Testnet
     runs-on: ubuntu-latest
     needs: deploy_devnet
+    if: github.event.inputs.release_target == 'testnet' || github.event.inputs.release_target == 'mainnet'
     environment:
       name: testnet
       url: https://testnet.sixsigmasports.app
@@ -45,6 +58,7 @@ jobs:
     name: Deploy Mainnet
     runs-on: ubuntu-latest
     needs: deploy_testnet
+    if: github.event.inputs.release_target == 'mainnet'
     environment:
       name: mainnet
       url: https://sixsigmasports.app
