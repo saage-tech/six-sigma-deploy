@@ -1,5 +1,5 @@
 name: CI/CD Pipeline
-run-name: ${{ format('CI/CD Pipeline – target: {0}', github.event.inputs.release_target || 'devnet') }}
+run-name: "CI/CD Pipeline - target: ${{ github.event.inputs.release_target }}"
 
 on:
   workflow_dispatch:
@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Build and publish images
         run: echo "Publishing images..."
+      - name: Record build summary
+        run: |
+          echo "### Run target" >> "$GITHUB_STEP_SUMMARY"
+          echo "* Selected target: \`${{ github.event.inputs.release_target || 'devnet' }}\`" >> "$GITHUB_STEP_SUMMARY"
 
   deploy_devnet:
     name: Deploy devnet (target: ${{ github.event.inputs.release_target || 'devnet' }})
@@ -38,6 +42,8 @@ jobs:
         run: echo "Publishing images..."
       - name: Deploy to devnet
         run: echo "Deploying to devnet"
+      - name: Append devnet summary
+        run: echo "* Reached devnet" >> "$GITHUB_STEP_SUMMARY"
 
   deploy_testnet:
     name: Deploy testnet (target: ${{ github.event.inputs.release_target || 'devnet' }})
@@ -54,6 +60,8 @@ jobs:
     steps:
       - name: Deploy to testnet
         run: echo "Deploying to testnet"
+      - name: Append testnet summary
+        run: echo "* Reached testnet" >> "$GITHUB_STEP_SUMMARY"
 
   deploy_mainnet:
     name: Deploy mainnet (target: ${{ github.event.inputs.release_target || 'devnet' }})
@@ -70,3 +78,5 @@ jobs:
     steps:
       - name: Deploy to mainnet
         run: echo "Deploying to mainnet"
+      - name: Append mainnet summary
+        run: echo "* Reached mainnet" >> "$GITHUB_STEP_SUMMARY"
