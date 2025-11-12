@@ -1,6 +1,6 @@
 {
   "release_type": "pre-release",
-  "deploy_type": "with-chain-upgrade",
+  "deploy_type": "simple",
   "images": {
     "publicmq-rust": {
       "repo": "publicmq-rust",

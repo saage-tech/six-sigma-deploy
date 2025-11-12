@@ -144,14 +144,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Determine Devnet deployment plan
-        id: devnet_plan
-        run: scripts/plan_deployment.sh devnet "$GITHUB_OUTPUT"
-      - name: Run Devnet deployment stages
-        env:
-          STAGES: ${{ steps.devnet_plan.outputs.stages }}
-          SERVICE: ${{ steps.devnet_plan.outputs.service }}
-        run: scripts/run_deploy_stages.sh devnet "$SERVICE" "$STAGES"
+      - name: Deploy Devnet stages
+        uses: ./.github/actions/deploy-environment
+        with:
+          env: devnet
 
   deploy_testnet:
     name: Deploy Testnet
@@ -168,8 +164,11 @@ jobs:
       group: testnet
 
     steps:
-      - name: Deploy to testnet
-        run: echo "Deploying to testnet"
+      - uses: actions/checkout@v4
+      - name: Deploy Testnet stages
+        uses: ./.github/actions/deploy-environment
+        with:
+          env: testnet
 
   deploy_mainnet:
     name: Deploy Mainnet
@@ -186,5 +185,8 @@ jobs:
       group: mainnet
 
     steps:
-      - name: Deploy to mainnet
-        run: echo "Deploying to mainnet"
+      - uses: actions/checkout@v4
+      - name: Deploy Mainnet stages
+        uses: ./.github/actions/deploy-environment
+        with:
+          env: mainnet

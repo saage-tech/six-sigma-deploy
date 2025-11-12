@@ -1,0 +1,114 @@
+name: Deploy Environment
+description: "Plan and execute deployment stages for an environment"
+
+inputs:
+  env:
+    description: "Environment name (e.g. devnet)"
+    required: true
+  versions_path:
+    description: "Path to versions.json"
+    required: false
+    default: versions.json
+
+runs:
+  using: composite
+  steps:
+    - name: Determine deployment plan
+      id: plan
+      shell: bash
+      run: |
+        scripts/plan_deployment.sh "${{ inputs.env }}" "$GITHUB_OUTPUT" "${{ inputs.versions_path }}"
+
+    - name: Emit stage flags
+      id: flags
+      shell: bash
+      run: |
+        scripts/emit_stage_flags.sh '${{ steps.plan.outputs.stages }}' "$GITHUB_OUTPUT"
+
+    - name: Scale down catalog services
+      if: steps.flags.outputs.stage_scale_down_catalog_services == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: scaling down catalog services in ${ENV_NAME}"
+
+    - name: Apply database migration
+      if: steps.flags.outputs.stage_apply_database_migration == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: applying database migration in ${ENV_NAME}"
+
+    - name: Launch green environment
+      if: steps.flags.outputs.stage_launch_green_environment == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: launching green environment in ${ENV_NAME}"
+
+    - name: Reconfigure websocket endpoint
+      if: steps.flags.outputs.stage_reconfigure_websocket_endpoint == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: reconfiguring websocket endpoint in ${ENV_NAME}"
+
+    - name: Execute upgrader component
+      if: steps.flags.outputs.stage_execute_upgrader_component == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: executing upgrader component in ${ENV_NAME}"
+
+    - name: Verify green environment
+      if: steps.flags.outputs.stage_verify_green_environment == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: verifying green environment in ${ENV_NAME}"
+
+    - name: Update blue environment
+      if: steps.flags.outputs.stage_update_blue_environment == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: updating blue environment in ${ENV_NAME}"
+
+    - name: Remove green environment
+      if: steps.flags.outputs.stage_remove_green_environment == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: removing green environment in ${ENV_NAME}"
+
+    - name: Update dependent services
+      if: steps.flags.outputs.stage_update_dependent_services == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: updating dependent services in ${ENV_NAME}"
+
+    - name: Update chain history documentation
+      if: steps.flags.outputs.stage_update_chain_history_documentation == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: updating chain history documentation in ${ENV_NAME}"
+
+    - name: Ensure deployment
+      if: steps.flags.outputs.stage_ensure_deployment == 'true'
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+      run: |
+        echo "Mock: ensuring deployment (locals.tf + terraform) in ${ENV_NAME}"

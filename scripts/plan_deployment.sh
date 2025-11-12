@@ -33,4 +33,4 @@ esac
   echo "stages=${stages}"
 } >> "${OUTPUT_PATH}"
 
-echo "[${ENV_NAME}] Service ${service} deploy_type=${deploy_type}; stages=${stages}"
+echo "[${ENV_NAME}] ${service} deploy_type=${deploy_type}; stages=${stages}"
