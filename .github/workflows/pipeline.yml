@@ -102,19 +102,13 @@ jobs:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: scripts/check_image_exists.sh ${{ steps.image_meta.outputs.image }} ${{ steps.image_meta.outputs.resolved_sha }} "$GITHUB_OUTPUT"
       
-      - name: Dispatch workflow
+      - name: Run image workflow
         if: steps.image_exists.outputs.image_exists != 'true'
-        env:
-          OWNER: ${{ github.repository_owner }}
-          IMAGE_REPO: ${{ steps.image_meta.outputs.repo }}
-          WORKFLOW_PATH: ${{ steps.image_meta.outputs.workflow }}
-          IMAGE_REF: ${{ steps.image_meta.outputs.ref }}
-          TOKEN: ${{ steps.app-token.outputs.token }}
-        run: scripts/dispatch_workflow.sh "$IMAGE_REPO" "$WORKFLOW_PATH" "$IMAGE_REF"
+        uses: ${{ github.repository_owner }}/${{ steps.image_meta.outputs.repo }}/.github/workflows/${{ steps.image_meta.outputs.workflow }}@${{ steps.image_meta.outputs.ref }}
       
-      - name: Skip dispatch (image exists)
+      - name: Skip image workflow (image exists)
         if: steps.image_exists.outputs.image_exists == 'true'
-        run: echo "Skipping dispatch for ${{ steps.image_meta.outputs.image }}; image already exists."
+        run: echo "Skipping workflow for ${{ steps.image_meta.outputs.image }}; image already exists."
       
       - name: Show release metadata
         run: echo "release_type -> ${{ needs.prepare_metadata.outputs.release_type }}"
