@@ -1,4 +1,5 @@
 {
+  "release_type": "release",
   "components": {
     "publicmq-rust": {
       "repo": "publicmq-rust",

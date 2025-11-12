@@ -1,39 +1,77 @@
 name: CI/CD Pipeline
-run-name: "CI/CD Pipeline - target: ${{ github.event.inputs.release_target }} backend: ${{ github.event.inputs.six-sigma-kolme-ref}}"
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - versions.json
+      - .github/workflows/pipeline.yml
   workflow_dispatch:
-    inputs:
-      release_target:
-        description: "Furthest environment to deploy to"
-        required: true
-        default: devnet
-        type: choice
-        options:
-          - devnet
-          - testnet
-          - mainnet
-      six-sigma-kolme-ref:
-        description: "Git ref for six-sigma-kolme deployment"
-        required: false
-        default: main
 
 jobs:
-  push:
-    name: Build and Publish images
+  determine_release_type:
+    name: Determine release metadata
     runs-on: ubuntu-latest
+    outputs:
+      release_type: ${{ steps.extract.outputs.release_type }}
+      components: ${{ steps.extract.outputs.components }}
     steps:
-      - name: Build and publish images
-        run: echo "Publishing images..."
-      - name: Show selected refs
+      - uses: actions/checkout@v4
+
+      - name: Extract release type
+        id: extract
         run: |
-          echo "six-sigma-kolme ref -> ${{ github.event.inputs['six-sigma-kolme-ref'] || 'main' }}"
-          echo "sixsigmasports ref  -> ${{ github.event.inputs['sixsigmasports-ref'] || 'main' }}"
+          release_type=$(jq -r '.release_type // "release"' versions.json)
+          components=$(jq -c '.components | to_entries | map({component: .key} + .value) // []' versions.json)
+          echo "release_type=$release_type" >> "$GITHUB_OUTPUT"
+          echo "components=$components" >> "$GITHUB_OUTPUT"
+          echo "Release type detected: $release_type"
+
+  push:
+    name: Build and publish images
+    needs: determine_release_type
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        component: ${{ fromJson(needs.determine_release_type.outputs.components) }}
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - name: Dispatch component workflow
+        env:
+          OWNER: ${{ github.repository_owner }}
+          COMPONENT_REPO: ${{ matrix.component.repo }}
+          WORKFLOW_PATH: ${{ matrix.component.workflow }}
+          COMPONENT_REF: ${{ matrix.component.ref }}
+          COMPONENT_NAME: ${{ matrix.component.component }}
+          TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          workflow_file=$(basename "$WORKFLOW_PATH")
+          dispatch_url="https://api.github.com/repos/${OWNER}/${COMPONENT_REPO}/actions/workflows/${workflow_file}/dispatches"
+          echo "Dispatching ${OWNER}/${COMPONENT_REPO}@${COMPONENT_REF} workflow ${workflow_file} (component ${COMPONENT_NAME})"
+          curl -sSf -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${dispatch_url}" \
+            -d "$(jq -n --arg ref "${COMPONENT_REF}" '{ref: $ref}')"
+      - name: Show release metadata
+        run: echo "release_type -> ${{ needs.determine_release_type.outputs.release_type }}"
 
   deploy_devnet:
     name: Deploy Devnet
+    needs:
+      - push
+      - determine_release_type
     runs-on: ubuntu-latest
-    needs: push
     environment:
       name: devnet
       url: https://dev.sixsigmasports.app
@@ -49,9 +87,11 @@ jobs:
 
   deploy_testnet:
     name: Deploy Testnet
+    needs:
+      - deploy_devnet
+      - determine_release_type
+    if: needs.determine_release_type.outputs.release_type == 'release'
     runs-on: ubuntu-latest
-    needs: deploy_devnet
-    if: github.event.inputs.release_target == 'testnet' || github.event.inputs.release_target == 'mainnet'
     environment:
       name: testnet
       url: https://testnet.sixsigmasports.app
@@ -65,9 +105,11 @@ jobs:
 
   deploy_mainnet:
     name: Deploy Mainnet
+    needs:
+      - deploy_testnet
+      - determine_release_type
+    if: needs.determine_release_type.outputs.release_type == 'release'
     runs-on: ubuntu-latest
-    needs: deploy_testnet
-    if: github.event.inputs.release_target == 'mainnet'
     environment:
       name: mainnet
       url: https://sixsigmasports.app
