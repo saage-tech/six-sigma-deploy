@@ -12,28 +12,26 @@ if [[ -z "${IMAGE_TAG}" || "${IMAGE_TAG}" == "null" ]]; then
   exit 0
 fi
 
-tmp=$(mktemp)
-org_url="https://api.github.com/orgs/${OWNER}/packages/container/${IMAGE_NAME}/versions?per_page=100"
-user_url="https://api.github.com/users/${OWNER}/packages/container/${IMAGE_NAME}/versions?per_page=100"
+export GH_TOKEN="${TOKEN}"
 
-status=$(curl -s -o "${tmp}" -w "%{http_code}" \
-  -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  "${org_url}")
+exists_id=$(
+  gh api "/orgs/${OWNER}/packages/container/${IMAGE_NAME}/versions" \
+    --paginate \
+    --jq ".[] | select(.metadata.container.tags[]? == \"${IMAGE_TAG}\") | .id" 2>/dev/null | head -n 1
+) || true
 
-if [[ "${status}" -eq 404 ]]; then
-  status=$(curl -s -o "${tmp}" -w "%{http_code}" \
-    -H "Accept: application/vnd.github+json" \
-    -H "Authorization: Bearer ${TOKEN}" \
-    "${user_url}")
+if [[ -z "${exists_id}" ]]; then
+  exists_id=$(
+    gh api "/users/${OWNER}/packages/container/${IMAGE_NAME}/versions" \
+      --paginate \
+      --jq ".[] | select(.metadata.container.tags[]? == \"${IMAGE_TAG}\") | .id" 2>/dev/null | head -n 1
+  ) || true
 fi
 
-if [[ "${status}" -lt 400 ]] && jq -e --arg tag "${IMAGE_TAG}" '.[] | select(.metadata.container.tags[]? == $tag)' "${tmp}" >/dev/null; then
+if [[ -n "${exists_id}" ]]; then
   echo "Image tag ${IMAGE_TAG} already exists in ghcr.io/${OWNER}/${IMAGE_NAME}"
   echo "image_exists=true" >> "${OUTPUT_PATH}"
 else
   echo "Image tag ${IMAGE_TAG} not found in ghcr.io/${OWNER}/${IMAGE_NAME}"
   echo "image_exists=false" >> "${OUTPUT_PATH}"
 fi
-
-rm -f "${tmp}"

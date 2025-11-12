@@ -100,7 +100,7 @@ jobs:
         id: image_exists
         env:
           OWNER: ${{ github.repository_owner }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ steps.app-token.outputs.token }}
         run: scripts/check_image_exists.sh ${{ steps.image_meta.outputs.image }} ${{ steps.image_meta.outputs.resolved_sha }} "$GITHUB_OUTPUT"
       
       - name: Run image workflow
