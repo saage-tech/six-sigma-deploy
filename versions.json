@@ -4,7 +4,7 @@
     "publicmq-rust": {
       "repo": "publicmq-rust",
       "workflow": ".github/workflows/rust.yml",
-      "ref": "a54c7708cb6fd08505078a669081d0e96480047d"
+      "ref": "668180fda2e91872bd4b753e0348dd93b244f0cc"
     }
   }
 }
