@@ -3,12 +3,18 @@ set -euo pipefail
 
 FILE_PATH="${1:-versions.json}"
 RELEASE_TYPE_INPUT="${RELEASE_TYPE_INPUT:-}"
+DEPLOY_TYPE_INPUT="${DEPLOY_TYPE_INPUT:-}"
 INPUTS_JSON="${INPUTS_JSON:-}"
 
 updated="false"
 
 if [[ -n "${RELEASE_TYPE_INPUT}" ]]; then
   jq --arg rt "${RELEASE_TYPE_INPUT}" '.release_type = $rt' "${FILE_PATH}" > tmp && mv tmp "${FILE_PATH}"
+  updated="true"
+fi
+
+if [[ -n "${DEPLOY_TYPE_INPUT}" ]]; then
+  jq --arg dt "${DEPLOY_TYPE_INPUT}" '.deploy_type = $dt' "${FILE_PATH}" > tmp && mv tmp "${FILE_PATH}"
   updated="true"
 fi
 

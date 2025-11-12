@@ -18,6 +18,16 @@ on:
         options:
           - pre-release
           - release
+      deploy_type:
+        description: "Override deploy type for this run (blank = keep file)"
+        required: false
+        default: simple
+        type: choice
+        options:
+          - simple
+          - with-database-migration
+          - with-chain-upgrade
+          - with-database-migration-and-chain-upgrade
       image_publicmq_rust_ref:
         description: "publicmq-rust ref"
         required: false
@@ -39,8 +49,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         env:
           RELEASE_TYPE_INPUT: ${{ github.event.inputs.release_type }}
+          DEPLOY_TYPE_INPUT: ${{ github.event.inputs.deploy_type }}
           INPUTS_JSON: ${{ toJson(github.event.inputs) }}
-        run: scripts/apply_manual_inputs.sh versions.json
+        run: |
+          DEPLOY_TYPE_INPUT="${DEPLOY_TYPE_INPUT}" scripts/apply_manual_inputs.sh versions.json
 
       - name: Generate GitHub App token
         id: prepare-app-token
@@ -131,10 +143,15 @@ jobs:
       group: devnet
 
     steps:
-      - name: publish-images
-        run: echo "Publishing images..."
-      - name: Deploy to devnet
-        run: echo "Deploying to devnet"
+      - uses: actions/checkout@v4
+      - name: Determine Devnet deployment plan
+        id: devnet_plan
+        run: scripts/plan_deployment.sh devnet "$GITHUB_OUTPUT"
+      - name: Run Devnet deployment stages
+        env:
+          STAGES: ${{ steps.devnet_plan.outputs.stages }}
+          SERVICE: ${{ steps.devnet_plan.outputs.service }}
+        run: scripts/run_deploy_stages.sh devnet "$SERVICE" "$STAGES"
 
   deploy_testnet:
     name: Deploy Testnet
