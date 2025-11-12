@@ -74,6 +74,8 @@ jobs:
       matrix:
         image: ${{ fromJson(needs.prepare_metadata.outputs.images) }}
     steps:
+      - uses: actions/checkout@v4
+
       - name: Generate GitHub App token
         id: app-token
         uses: actions/create-github-app-token@v1
