@@ -104,7 +104,10 @@ jobs:
       
       - name: Run image workflow
         if: steps.image_exists.outputs.image_exists != 'true'
-        uses: ${{ github.repository_owner }}/${{ steps.image_meta.outputs.repo }}/.github/workflows/${{ steps.image_meta.outputs.workflow }}@${{ steps.image_meta.outputs.ref }}
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TOKEN: ${{ steps.app-token.outputs.token }}
+        run: scripts/run_workflow_with_wait.sh ${{ steps.image_meta.outputs.repo }} ${{ steps.image_meta.outputs.workflow }} ${{ steps.image_meta.outputs.ref }}
       
       - name: Skip image workflow (image exists)
         if: steps.image_exists.outputs.image_exists == 'true'
