@@ -1,10 +1,29 @@
 {
   "release_type": "release",
-  "components": {
+  "images": {
     "publicmq-rust": {
       "repo": "publicmq-rust",
       "workflow": ".github/workflows/rust.yml",
       "ref": "668180fda2e91872bd4b753e0348dd93b244f0cc"
+    }
+  },
+  "services": {
+    "publicmq": {
+      "image": "publicmq-rust",
+      "environments": {
+        "devnet": {
+          "current_ref": null,
+          "deployed_at": null
+        },
+        "testnet": {
+          "current_ref": null,
+          "deployed_at": null
+        },
+        "mainnet": {
+          "current_ref": null,
+          "deployed_at": null
+        }
+      }
     }
   }
 }
