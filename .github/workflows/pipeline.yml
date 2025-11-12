@@ -73,18 +73,77 @@ jobs:
             echo "No manual overrides supplied."
           fi
 
-      - name: Commit manual overrides
-        if: github.event_name == 'workflow_dispatch'
+      - name: Generate GitHub App token
+        id: prepare-app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Resolve image refs
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TOKEN: ${{ steps.prepare-app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          file="versions.json"
+          resolved_any="false"
+
+          mapfile -t images < <(jq -r '.images | keys[]?' "$file")
+          for image in "${images[@]}"; do
+            repo=$(jq -r --arg img "$image" '.images[$img].repo' "$file")
+            ref=$(jq -r --arg img "$image" '.images[$img].ref' "$file")
+
+            if [ -z "$ref" ] || [ "$ref" = "null" ]; then
+              echo "Skipping $image (no ref defined)"
+              continue
+            fi
+
+            if [[ "$ref" == refs/* ]]; then
+              ref_path="${ref#refs/}"
+            else
+              ref_path="heads/${ref}"
+            fi
+
+            encoded_ref=$(jq -rn --arg r "$ref_path" '$r|@uri')
+            api_url="https://api.github.com/repos/${OWNER}/${repo}/git/ref/${encoded_ref}"
+
+            response=$(curl -sSf \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${TOKEN}" \
+              "$api_url") || {
+                echo "Unable to resolve $image ref '$ref' via $api_url"
+                exit 1
+              }
+
+            resolved=$(echo "$response" | jq -r '.object.sha')
+
+            image_tag="ghcr.io/${OWNER}/${image}:${resolved}"
+
+            jq --arg img "$image" --arg sha "$resolved" --arg tag "$image_tag" \
+              '.images[$img].resolved_sha = $sha | .images[$img].resolved_image = $tag' \
+              "$file" > tmp && mv tmp "$file"
+
+            echo "Resolved $image ($ref) -> $resolved ($image_tag)"
+            resolved_any="true"
+          done
+
+          if [ "$resolved_any" != "true" ]; then
+            echo "No image refs required resolution."
+          fi
+
+      - name: Persist metadata updates
         run: |
           set -euo pipefail
           if git diff --quiet --exit-code versions.json; then
-            echo "No changes to commit."
+            echo "No metadata changes to commit."
             exit 0
           fi
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
           git add versions.json
-          git commit -m "chore: apply manual version overrides"
+          git commit -m "chore: update version metadata"
           git push
 
       - name: Extract release type
