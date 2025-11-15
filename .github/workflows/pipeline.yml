@@ -144,10 +144,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Generate GitHub App token
+        id: devnet-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
       - name: Deploy Devnet stages
         uses: ./.github/actions/deploy-environment
         with:
           env: devnet
+          workflow_token: ${{ steps.devnet-token.outputs.token }}
 
   deploy_testnet:
     name: Deploy Testnet
@@ -165,10 +173,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Generate GitHub App token
+        id: testnet-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
       - name: Deploy Testnet stages
         uses: ./.github/actions/deploy-environment
         with:
           env: testnet
+          workflow_token: ${{ steps.testnet-token.outputs.token }}
 
   deploy_mainnet:
     name: Deploy Mainnet
@@ -186,7 +202,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Generate GitHub App token
+        id: mainnet-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
       - name: Deploy Mainnet stages
         uses: ./.github/actions/deploy-environment
         with:
           env: mainnet
+          workflow_token: ${{ steps.mainnet-token.outputs.token }}

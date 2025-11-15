@@ -10,15 +10,32 @@ OWNER="${OWNER:?OWNER required}"
 REPO="${1:?repository required}"
 WORKFLOW_FILE="${2:?workflow file required}"
 REF="${3:?ref required}"
+WORKFLOW_INPUTS_JSON="${4:-}"
 TOKEN="${TOKEN:?token required}"
 
 export GH_TOKEN="${TOKEN}"
 
 echo "Running ${OWNER}/${REPO} workflow ${WORKFLOW_FILE} @ ${REF} (waiting for completion)"
 
-gh workflow run "${WORKFLOW_FILE}" \
-  --repo "${OWNER}/${REPO}" \
-  --ref "${REF}"
+workflow_input_args=()
+
+if [[ -n "${WORKFLOW_INPUTS_JSON}" && "${WORKFLOW_INPUTS_JSON}" != "null" ]]; then
+  if ! echo "${WORKFLOW_INPUTS_JSON}" | jq -e 'type == "object"' >/dev/null; then
+    echo "WORKFLOW_INPUTS_JSON must be a JSON object. Received: ${WORKFLOW_INPUTS_JSON}" >&2
+    exit 1
+  fi
+
+  mapfile -t workflow_inputs < <(echo "${WORKFLOW_INPUTS_JSON}" | jq -r 'to_entries[] | "\(.key)=\(.value // "")"')
+
+  for input in "${workflow_inputs[@]}"; do
+    workflow_input_args+=("-f" "${input}")
+  done
+fi
+
+workflow_cmd=(gh workflow run "${WORKFLOW_FILE}" --repo "${OWNER}/${REPO}" --ref "${REF}")
+workflow_cmd+=("${workflow_input_args[@]}")
+
+"${workflow_cmd[@]}"
 
 sleep 5
 

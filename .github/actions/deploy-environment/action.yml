@@ -9,6 +9,9 @@ inputs:
     description: "Path to versions.json"
     required: false
     default: versions.json
+  workflow_token:
+    description: "GitHub token with permission to trigger infrastructure workflows"
+    required: true
 
 runs:
   using: composite
@@ -24,6 +27,20 @@ runs:
       shell: bash
       run: |
         scripts/emit_stage_flags.sh '${{ steps.plan.outputs.stages }}' "$GITHUB_OUTPUT"
+
+    - name: Extract image metadata
+      id: image_meta
+      shell: bash
+      env:
+        VERSIONS_PATH: ${{ inputs.versions_path }}
+      run: |
+        rust_tag=$(jq -r '.images["publicmq-rust"].resolved_image // empty' "${VERSIONS_PATH}")
+        if [[ -z "${rust_tag}" ]]; then
+          echo "Unable to locate publicmq-rust.resolved_image in ${VERSIONS_PATH}" >&2
+          exit 1
+        fi
+
+        echo "rust_publicmq_tag=${rust_tag}" >> "$GITHUB_OUTPUT"
 
     - name: Scale down catalog services
       if: steps.flags.outputs.stage_scale_down_catalog_services == 'true'
@@ -110,5 +127,17 @@ runs:
       shell: bash
       env:
         ENV_NAME: ${{ inputs.env }}
+        OWNER: ${{ github.repository_owner }}
+        TOKEN: ${{ inputs.workflow_token }}
+        RUST_PUBLICMQ_TAG: ${{ steps.image_meta.outputs.rust_publicmq_tag }}
       run: |
-        echo "Mock: ensuring deployment (locals.tf + terraform) in ${ENV_NAME}"
+        workflow_inputs=$(jq -n \
+          --arg env "${ENV_NAME}" \
+          --arg tag "${RUST_PUBLICMQ_TAG}" \
+          '{environment: $env, rust_publicmq_tag: $tag}')
+
+        scripts/run_workflow_with_wait.sh \
+          "v2-infrastructure" \
+          ".github/workflows/ensure-deploy.yml" \
+          "main" \
+          "${workflow_inputs}"
