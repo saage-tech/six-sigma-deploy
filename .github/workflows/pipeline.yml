@@ -1,0 +1,222 @@
+name: CI/CD Pipeline
+# Purpose:
+# - Prepare release metadata from versions.json (and optional dispatch inputs)
+# - Build/publish all container images to GHCR
+# - Deploy devnet → testnet → mainnet via the deploy-environment composite action
+# Triggers: push to main touching versions.json/pipeline/scripts or manual dispatch.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - versions.json
+      - .github/workflows/pipeline.yml
+      - scripts/**
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: "Override release type for this run (blank = keep file)"
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - pre-release
+          - release
+      auto_update_images:
+        description: "Update versions.json (resolve refs and commit/push)"
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  prepare_metadata:
+    name: Prepare release metadata
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    env:
+      AUTO_UPDATE_IMAGES: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.auto_update_images == 'true' }}
+    outputs:
+      release_type: ${{ steps.meta.outputs.release_type }}
+      image_keys: ${{ steps.images.outputs.keys }}
+
+    steps:
+      - uses: actions/checkout@v4
+    
+      - name: Generate GitHub App token
+        id: prepare-app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Install just
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just@1.40.0
+
+      - name: Update versions.json with latest image refs
+        if: env.AUTO_UPDATE_IMAGES == 'true'
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TOKEN: ${{ steps.prepare-app-token.outputs.token }}
+        run: just update-versions
+
+      - name: Set release type override (if provided)
+        env:
+          RELEASE_TYPE_INPUT: ${{ github.event.inputs.release_type || '' }}
+        if: ${{ env.RELEASE_TYPE_INPUT != '' && env.RELEASE_TYPE_INPUT != 'null' }}
+        run: just set-release-type "${RELEASE_TYPE_INPUT}"
+
+      - name: Persist metadata changes
+        env:
+          RELEASE_TYPE_INPUT: ${{ github.event.inputs.release_type || '' }}
+        if: ${{ env.AUTO_UPDATE_IMAGES == 'true' || (env.RELEASE_TYPE_INPUT != '' && env.RELEASE_TYPE_INPUT != 'null') }}
+        run: just persist-metadata
+
+      - name: Get release metadata
+        id: meta
+        run: |
+          release_type="$(just get-release-type)"
+          echo "release_type=${release_type}" >> "$GITHUB_OUTPUT"
+
+      - name: List image keys
+        id: images
+        run: echo "keys=$(just list-images-json)" >> "$GITHUB_OUTPUT"
+
+  build_images:
+    name: Build and publish images
+    needs: prepare_metadata
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.prepare_metadata.outputs.image_keys) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.DOCKER_PWD }}" | docker login ghcr.io -u ${{ secrets.DOCKER_USER}} --password-stdin
+
+      # - name: Log in to GitHub Container Registry
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}          
+      
+      - name: Install just
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just@1.40.0
+
+      - name: Build and publish image
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSIONS_PATH: versions.json
+        run: |
+          just build-and-publish-image "${{ matrix.image }}"
+
+  deploy_devnet:
+    name: Deploy Devnet
+    needs:
+      - build_images
+      - prepare_metadata
+    runs-on: ubuntu-latest
+    environment:
+      name: devnet
+      url: https://dev.sixsigmasports.app
+
+    concurrency:
+      group: devnet
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate GitHub App token
+        id: devnet-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - name: Deploy Devnet stages
+        uses: ./.github/actions/deploy-environment
+        with:
+          env: devnet
+          workflow_token: ${{ steps.devnet-token.outputs.token }}
+
+  deploy_testnet:
+    name: Deploy Testnet
+    needs:
+      - deploy_devnet
+      - prepare_metadata
+    if: needs.prepare_metadata.outputs.release_type == 'release'
+    runs-on: ubuntu-latest
+    environment:
+      name: testnet
+      url: https://testnet.sixsigmasports.app
+
+    concurrency:
+      group: testnet
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate GitHub App token
+        id: testnet-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - name: Deploy Testnet stages
+        uses: ./.github/actions/deploy-environment
+        with:
+          env: testnet
+          workflow_token: ${{ steps.testnet-token.outputs.token }}
+
+  deploy_mainnet:
+    name: Deploy Mainnet
+    needs:
+      - deploy_testnet
+      - prepare_metadata
+    if: needs.prepare_metadata.outputs.release_type == 'release'
+    runs-on: ubuntu-latest
+    environment:
+      name: mainnet
+      url: https://sixsigmasports.app
+
+    concurrency:
+      group: mainnet
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate GitHub App token
+        id: mainnet-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      - name: Deploy Mainnet stages
+        uses: ./.github/actions/deploy-environment
+        with:
+          env: mainnet
+          workflow_token: ${{ steps.mainnet-token.outputs.token }}

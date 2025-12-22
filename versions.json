@@ -1,0 +1,180 @@
+{
+  "release_type": "pre-release",
+  "registry": "ghcr.io/saage-tech",
+  "images": {
+    "publicmq-rust": {
+      "repo": "publicmq-rust",
+      "workflow": ".github/workflows/rust.yml",
+      "ref": "master",
+      "image_name": "publicmq-rust",
+      "revision_sha": "668180fda2e91872bd4b753e0348dd93b244f0cc"
+    },
+    "kolme-app": {
+      "repo": "six-sigma-kolme",
+      "workflow": ".github/workflows/kolme-app.yml",
+      "ref": "main",
+      "image_name": "six-sigma-kolme-app",
+      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982",
+      "code_version": "3.2.7"
+    },
+    "api-server": {
+      "repo": "six-sigma-kolme",
+      "workflow": ".github/workflows/api-server.yml",
+      "ref": "main",
+      "image_name": "six-sigma-kolme-api-server",
+      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+    },
+    "back-office": {
+      "repo": "six-sigma-kolme",
+      "workflow": ".github/workflows/back-office.yml",
+      "ref": "main",
+      "image_name": "six-sigma-kolme-back-office-server",
+      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+    },
+    "bots": {
+      "repo": "six-sigma-kolme",
+      "workflow": ".github/workflows/bots.yml",
+      "ref": "main",
+      "image_name": "six-sigma-kolme-bots",
+      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+    },
+    "catalog": {
+      "repo": "six-sigma-kolme",
+      "workflow": ".github/workflows/catalog.yml",
+      "ref": "main",
+      "image_name": "six-sigma-kolme-catalog-service",
+      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+    },
+    "lsports-broker": {
+      "repo": "six-sigma-kolme",
+      "workflow": ".github/workflows/lsports-broker.yml",
+      "ref": "main",
+      "image_name": "six-sigma-kolme-lsports-broker",
+      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+    }
+  },
+  "services": {
+    "publicmq": {
+      "tag_name": "rust_publicmq_tag",
+      "image": "publicmq-rust"
+    },
+    "bots": {
+      "tag_name": "bots_tag",
+      "image": "bots"
+    },
+    "app_api_server": {
+      "tag_name": "app_api_server_tag",
+      "image": "api-server"
+    },
+    "back_office": {
+      "tag_name": "back_office_tag",
+      "image": "back-office"
+    },
+    "indexer": {
+      "tag_name": "indexer_tag",
+      "image": "catalog"
+    },
+    "catalog": {
+      "tag_name": "catalog_tag",
+      "image": "catalog"
+    },
+    "lsports_ingester": {
+      "tag_name": "lsports_ingester_tag",
+      "image": "lsports-broker"
+    },
+    "lsports_processor": {
+      "tag_name": "lsports_processor_tag",
+      "image": "lsports-broker"
+    },
+    "lsports_broker": {
+      "tag_name": "lsports_broker_tag",
+      "image": "lsports-broker"
+    },
+    "odds": {
+      "tag_name": "odds_tag",
+      "image": "lsports-broker"
+    },
+    "kolme_green": {
+      "tag_name": "kolme_green_tag",
+      "image": "kolme-app"
+    },
+    "kolme_processor": {
+      "tag_name": "kolme_processor_tag",
+      "image": "kolme-app"
+    },
+    "kolme_approver": {
+      "tag_name": "kolme_approver_tag",
+      "image": "kolme-app"
+    },
+    "kolme_listener": {
+      "tag_name": "kolme_listener_tag",
+      "image": "kolme-app"
+    },
+    "kolme_archiver": {
+      "tag_name": "kolme_archiver_tag",
+      "image": "kolme-app"
+    },
+    "kolme_api_server": {
+      "tag_name": "kolme_api_server_tag",
+      "image": "kolme-app"
+    },
+    "kolme_submitter": {
+      "tag_name": "kolme_submitter_tag",
+      "image": "kolme-app"
+    },
+    "catalog_db_image": {
+      "tag_name": "catalog_db_image_tag",
+      "image": "catalog",
+      "installed_revision_sha": "7ad35bed261f326a79625410182d74625373c776"
+    },
+    "broker_db_image": {
+      "tag_name": "broker_db_image_tag",
+      "image": "lsports-broker",
+      "installed_revision_sha": "7c2e165681892da70154c654417b78f0f80e7170"
+    }
+  },
+  "environments": {
+    "devnet": {
+      "chain_api_url": "https://chain-api.dev.sixsigmasports.app",
+      "websocket_server": "wss://kolme-processor-p1.devnet.sixsigmasports.app",
+      "green_api_url": "https://green-api-server.devnet.sixsigmasports.app",
+      "green_websocket_server": "wss://kolme-processor-p1.devnet.sixsigmasports.app,wss://kolme-processor-p2.devnet.sixsigmasports.app",
+      "migrations": {
+        "catalog-and-users-service": {
+          "last_applied": "20251202113200_affiliate_claim_status.sql"
+        },
+        "lsports-broker": {
+          "last_applied": "20251225000000_change_gemini_event_summary_to_jsonb.sql"
+        }
+      }
+    },
+    "testnet": {
+      "chain_api_url": "https://chain-api.testnet.sixsigmasports.app",
+      "websocket_server": "wss://kolme-processor-p1.testnet.sixsigmasports.app",
+      "green_api_url": "https://green-api-server.testnet.sixsigmasports.app",
+      "green_websocket_server": "wss://kolme-processor-p1.testnet.sixsigmasports.app,wss://kolme-processor-p2.testnet.sixsigmasports.app",
+      "migrations": {
+        "catalog-and-users-service": {
+          "last_applied": "20251202113200_affiliate_claim_status.sql"
+        },
+        "lsports-broker": {
+          "last_applied": "20251225000000_change_gemini_event_summary_to_jsonb.sql"
+        }
+      }
+    },
+    "mainnet": {
+      "chain_api_url": "https://chain-api.sixsigmasports.app",
+      "websocket_server": "wss://kolme-processor-p1.mainnet.sixsigmasports.app",
+      "green_api_url": "https://green-api-server.sixsigmasports.app",
+      "green_websocket_server": "wss://kolme-processor-p1.mainnet.sixsigmasports.app,wss://kolme-processor-p2.mainnet.sixsigmasports.app",
+      "migrations": {
+        "catalog-and-users-service": {
+          "last_applied": "20251202113200_affiliate_claim_status.sql"
+        },
+        "lsports-broker": {
+          "last_applied": "20251225000000_change_gemini_event_summary_to_jsonb.sql"
+        }
+      }
+    }
+  }
+}

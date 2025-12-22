@@ -1,0 +1,95 @@
+name: Deploy Environment
+description: "Plan and execute deployment stages for an environment"
+
+inputs:
+  env:
+    description: "Environment name (e.g. devnet)"
+    required: true
+  versions_path:
+    description: "Path to versions.json"
+    required: false
+    default: versions.json
+  workflow_token:
+    description: "GitHub token with permission to trigger infrastructure workflows"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install just (needed for just-based stages)
+      uses: taiki-e/install-action@v2
+      with:
+        tool: just@1.40.0
+
+    - name: Scale down catalog services
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+        OWNER: ${{ github.repository_owner }}
+        TOKEN: ${{ inputs.workflow_token }}
+        VERSIONS_PATH: ${{ inputs.versions_path }}
+      run: just scale-down-catalog-services
+
+    - name: Apply database migration
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+        OWNER: ${{ github.repository_owner }}
+        TOKEN: ${{ inputs.workflow_token }}
+        VERSIONS_PATH: ${{ inputs.versions_path }}
+      run: |
+        just apply-database-migration
+        just update-last-applied-migrations
+        just persist-metadata
+
+    - name: Launch green environment
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+        OWNER: ${{ github.repository_owner }}
+        TOKEN: ${{ inputs.workflow_token }}
+        VERSIONS_PATH: ${{ inputs.versions_path }}
+      run: |
+        just launch-green-environment
+
+    - name: Execute upgrader component
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+        OWNER: ${{ github.repository_owner }}
+        TOKEN: ${{ inputs.workflow_token }}
+        VERSIONS_PATH: ${{ inputs.versions_path }}
+      run: |
+        just run-upgrader-component
+
+    - name: Update blue environment
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+        OWNER: ${{ github.repository_owner }}
+        TOKEN: ${{ inputs.workflow_token }}
+        VERSIONS_PATH: ${{ inputs.versions_path }}
+      run: |
+        just update-blue-environment
+
+    - name: Remove green environment
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+        OWNER: ${{ github.repository_owner }}
+        TOKEN: ${{ inputs.workflow_token }}
+        VERSIONS_PATH: ${{ inputs.versions_path }}
+      run: |
+        just remove-green-environment
+
+    - name: Ensure deployment
+      shell: bash
+      env:
+        ENV_NAME: ${{ inputs.env }}
+        OWNER: ${{ github.repository_owner }}
+        TOKEN: ${{ inputs.workflow_token }}
+        VERSIONS_PATH: ${{ inputs.versions_path }}
+      run: |
+        just ensure-deployment
+
+    
