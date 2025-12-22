@@ -16,12 +16,11 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: "Override release type for this run (blank = keep file)"
-        required: false
-        default: ""
+        description: "Release type"
+        required: true
+        default: "pre-release"
         type: choice
         options:
-          - ""
           - pre-release
           - release
       auto_update_images:
