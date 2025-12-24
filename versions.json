@@ -1,5 +1,5 @@
 {
-  "release_type": "pre-release",
+  "release_type": "release",
   "registry": "ghcr.io/saage-tech",
   "images": {
     "publicmq-rust": {
@@ -14,43 +14,43 @@
       "workflow": ".github/workflows/kolme-app.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-app",
-      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982",
-      "code_version": "3.2.7"
+      "revision_sha": "c0ad1cbb2dc27f31e08c51502353a1697d251ede",
+      "code_version": "3.3.0"
     },
     "api-server": {
       "repo": "six-sigma-kolme",
       "workflow": ".github/workflows/api-server.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-api-server",
-      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+      "revision_sha": "c0ad1cbb2dc27f31e08c51502353a1697d251ede"
     },
     "back-office": {
       "repo": "six-sigma-kolme",
       "workflow": ".github/workflows/back-office.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-back-office-server",
-      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+      "revision_sha": "c0ad1cbb2dc27f31e08c51502353a1697d251ede"
     },
     "bots": {
       "repo": "six-sigma-kolme",
       "workflow": ".github/workflows/bots.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-bots",
-      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+      "revision_sha": "c0ad1cbb2dc27f31e08c51502353a1697d251ede"
     },
     "catalog": {
       "repo": "six-sigma-kolme",
       "workflow": ".github/workflows/catalog.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-catalog-service",
-      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+      "revision_sha": "c0ad1cbb2dc27f31e08c51502353a1697d251ede"
     },
     "lsports-broker": {
       "repo": "six-sigma-kolme",
       "workflow": ".github/workflows/lsports-broker.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-lsports-broker",
-      "revision_sha": "07742e36636aa7f1c4efdba53bb14decb77b9982"
+      "revision_sha": "c0ad1cbb2dc27f31e08c51502353a1697d251ede"
     }
   },
   "services": {
