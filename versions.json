@@ -14,7 +14,7 @@
       "workflow": ".github/workflows/kolme-app.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-app",
-      "revision_sha": "ca7f788518f0937c25577040b27ed0722350d5a8",
+      "revision_sha": "b141d4d3fe93de984be22bef4124ad0633684eef",
       "code_version": "3.4.0"
     },
     "api-server": {
@@ -22,35 +22,35 @@
       "workflow": ".github/workflows/api-server.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-api-server",
-      "revision_sha": "ca7f788518f0937c25577040b27ed0722350d5a8"
+      "revision_sha": "b141d4d3fe93de984be22bef4124ad0633684eef"
     },
     "back-office": {
       "repo": "six-sigma-kolme",
       "workflow": ".github/workflows/back-office.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-back-office-server",
-      "revision_sha": "ca7f788518f0937c25577040b27ed0722350d5a8"
+      "revision_sha": "b141d4d3fe93de984be22bef4124ad0633684eef"
     },
     "bots": {
       "repo": "six-sigma-kolme",
       "workflow": ".github/workflows/bots.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-bots",
-      "revision_sha": "ca7f788518f0937c25577040b27ed0722350d5a8"
+      "revision_sha": "b141d4d3fe93de984be22bef4124ad0633684eef"
     },
     "catalog": {
       "repo": "six-sigma-kolme",
       "workflow": ".github/workflows/catalog.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-catalog-service",
-      "revision_sha": "ca7f788518f0937c25577040b27ed0722350d5a8"
+      "revision_sha": "b141d4d3fe93de984be22bef4124ad0633684eef"
     },
     "lsports-broker": {
       "repo": "six-sigma-kolme",
       "workflow": ".github/workflows/lsports-broker.yml",
       "ref": "main",
       "image_name": "six-sigma-kolme-lsports-broker",
-      "revision_sha": "ca7f788518f0937c25577040b27ed0722350d5a8"
+      "revision_sha": "b141d4d3fe93de984be22bef4124ad0633684eef"
     }
   },
   "services": {
