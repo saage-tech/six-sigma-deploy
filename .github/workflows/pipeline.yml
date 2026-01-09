@@ -42,6 +42,7 @@ jobs:
     outputs:
       release_type: ${{ steps.meta.outputs.release_type }}
       image_keys: ${{ steps.images.outputs.keys }}
+      updated_ref: ${{ steps.ref.outputs.ref }}
 
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +61,7 @@ jobs:
           tool: just@1.40.0
 
       - name: Update versions.json with latest image refs
-        if: env.AUTO_UPDATE_IMAGES == 'true'
+        if: ${{ env.AUTO_UPDATE_IMAGES == 'true' && github.run_attempt == 1 }}
         env:
           OWNER: ${{ github.repository_owner }}
           TOKEN: ${{ steps.prepare-app-token.outputs.token }}
@@ -75,8 +76,18 @@ jobs:
       - name: Persist metadata changes
         env:
           RELEASE_TYPE_INPUT: ${{ github.event.inputs.release_type || '' }}
-        if: ${{ env.AUTO_UPDATE_IMAGES == 'true' || (env.RELEASE_TYPE_INPUT != '' && env.RELEASE_TYPE_INPUT != 'null') }}
+        if: ${{ github.run_attempt == 1 && (env.AUTO_UPDATE_IMAGES == 'true' || (env.RELEASE_TYPE_INPUT != '' && env.RELEASE_TYPE_INPUT != 'null')) }}
         run: just persist-metadata
+
+      - name: Capture workflow ref (post-persist or fallback)
+        id: ref
+        run: |
+          if [ "${GITHUB_RUN_ATTEMPT}" = "1" ]; then
+            ref=$(git rev-parse HEAD)
+          else
+            ref="${GITHUB_SHA}"
+          fi
+          echo "ref=${ref}" >> "$GITHUB_OUTPUT"
 
       - name: Get release metadata
         id: meta
@@ -102,6 +113,8 @@ jobs:
         image: ${{ fromJson(needs.prepare_metadata.outputs.image_keys) }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare_metadata.outputs.updated_ref }}
 
       - name: Generate GitHub App token
         id: app-token
@@ -149,6 +162,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare_metadata.outputs.updated_ref }}
       - name: Generate GitHub App token
         id: devnet-token
         uses: actions/create-github-app-token@v1
@@ -178,6 +193,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare_metadata.outputs.updated_ref }}
       - name: Generate GitHub App token
         id: testnet-token
         uses: actions/create-github-app-token@v1
@@ -207,6 +224,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare_metadata.outputs.updated_ref }}
       - name: Generate GitHub App token
         id: mainnet-token
         uses: actions/create-github-app-token@v1
