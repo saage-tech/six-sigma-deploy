@@ -4,7 +4,7 @@ set -euo pipefail
 # Run upgrader component if chain chain_version differs from green code_version.
 # Runs only if: green_api_url exists and is reachable; chain_api_url exists; chain_chain_version != green code_version.
 # Skips if green API is unreachable. Errors if required URLs are missing.
-# After dispatch (and when not SKIP_REMOTE), waits for chain to reach green code_version.
+# After dispatch (and when not SKIP_REMOTE), waits for chain_version to reach green code_version.
 #
 # Env/args:
 #   ENV_NAME (required or first arg)
@@ -74,11 +74,11 @@ if [[ -z "${chain_chain_version}" || "${chain_chain_version}" == "null" ]]; then
 fi
 
 if [[ "${chain_chain_version}" == "${green_code_version}" ]]; then
-  echo "Chain chain_version (${chain_chain_version}) already matches green code_version (${green_code_version}); skipping upgrader component."
+  echo "Chain chain_version (${chain_chain_version}) already matches target (${green_code_version}); skipping upgrader component."
   exit 0
 fi
 
-echo "Chain chain_version (${chain_chain_version}) differs from green code_version (${green_code_version}); running upgrader component."
+echo "Chain chain_version (${chain_chain_version}) differs from target (${green_code_version}); running upgrader component."
 
 SERVICE_LIST="kolme_green" \
 ACTION="execute upgrader component" \
@@ -96,13 +96,14 @@ if [[ "${SKIP_REMOTE}" != "true" ]]; then
 fi
 
 if [[ "${dispatched}" == "true" ]]; then
-  echo "Waiting for chain to reach code_version=${green_code_version} (timeout ${UPGRADER_WAIT_TIMEOUT}s)..."
+  echo "Waiting for chain_version to reach ${green_code_version} (timeout ${UPGRADER_WAIT_TIMEOUT}s; MATCH_CHAIN_ONLY=true)..."
   TARGET_CODE_VERSION="${green_code_version}" \
   ENV_NAME="${ENV_NAME}" \
   VERSIONS_PATH="${VERSIONS_PATH}" \
   API_URL_KEY="chain_api_url" \
   TIMEOUT_SECONDS="${UPGRADER_WAIT_TIMEOUT}" \
   SLEEP_SECONDS="${UPGRADER_WAIT_SLEEP}" \
+  MATCH_CHAIN_ONLY="true" \
   bash scripts/wait_for_version_to_match.sh
 else
   echo "SKIP_REMOTE=true; not waiting for upgrader convergence."

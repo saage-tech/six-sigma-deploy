@@ -13,6 +13,7 @@ set -euo pipefail
 #   API_URL_KEY: key under environments to read (default: chain_api_url)
 #   TIMEOUT_SECONDS (default: 600)
 #   SLEEP_SECONDS (default: 10)
+#   MATCH_CHAIN_ONLY (default: false) - when true, succeed once chain_version matches target (ignores code_version)
 #
 # Exits 0 when both versions match; exits 1 on timeout or errors.
 
@@ -23,6 +24,7 @@ VERSIONS_PATH="${VERSIONS_PATH:-versions.json}"
 API_URL_KEY="${API_URL_KEY:-chain_api_url}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-600}"
 SLEEP_SECONDS="${SLEEP_SECONDS:-10}"
+MATCH_CHAIN_ONLY="${MATCH_CHAIN_ONLY:-false}"
 
 if [[ -z "${TARGET_CODE_VERSION}" ]]; then
   echo "TARGET_CODE_VERSION (arg2) is required" >&2
@@ -83,9 +85,14 @@ while true; do
 
   echo "code_version=${code_version}, chain_version=${chain_version}, target=${TARGET_CODE_VERSION}"
 
-  if [[ "${code_version}" == "${TARGET_CODE_VERSION}" && "${chain_version}" == "${TARGET_CODE_VERSION}" ]]; then
-    echo "Versions match target '${TARGET_CODE_VERSION}'."
-    exit 0
+  if [[ "${chain_version}" == "${TARGET_CODE_VERSION}" ]]; then
+    if [[ "${MATCH_CHAIN_ONLY}" == "true" ]]; then
+      echo "chain_version matches target '${TARGET_CODE_VERSION}' (code_version=${code_version}); accepting due to MATCH_CHAIN_ONLY=true."
+      exit 0
+    elif [[ "${code_version}" == "${TARGET_CODE_VERSION}" ]]; then
+      echo "Versions match target '${TARGET_CODE_VERSION}'."
+      exit 0
+    fi
   fi
 
   sleep "${SLEEP_SECONDS}"
