@@ -68,10 +68,12 @@ if [[ -z "${chain_code_version}" || -z "${chain_chain_version}" || "${chain_code
   exit 1
 fi
 
-if [[ "${chain_code_version}" != "${chain_chain_version}" ]]; then
-  echo "Chain not in sync (code_version=${chain_code_version}, chain_version=${chain_chain_version}); skipping green removal."
-  exit 0
-fi
+# Skip if chain is not in sync (code_version must match chain_version).
+# Temporarily disabled per request; re-enable to guard green removal.
+# if [[ "${chain_code_version}" != "${chain_chain_version}" ]]; then
+#   echo "Chain not in sync (code_version=${chain_code_version}, chain_version=${chain_chain_version}); skipping green removal."
+#   exit 0
+# fi
 
 if ! curl -fsSL --max-time 10 "${green_api_url}" >/dev/null 2>&1; then
   echo "Green API ${green_api_url} not reachable; skipping green removal."
