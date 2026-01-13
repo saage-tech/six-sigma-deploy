@@ -82,11 +82,15 @@ jobs:
       - name: Capture workflow ref (post-persist or fallback)
         id: ref
         run: |
-          if [ "${GITHUB_RUN_ATTEMPT}" = "1" ]; then
-            ref=$(git rev-parse HEAD)
-          else
-            ref="${GITHUB_SHA}"
+          # Keep reruns idempotent: prefer the metadata commit we pushed (if present), otherwise fall back to the event SHA.
+          git fetch --no-tags --depth=32 origin "${GITHUB_REF_NAME}"
+
+          ref="${GITHUB_SHA}"
+          metadata_commit="$(git log --format='%H' --author='github-actions' --grep='^chore: update version metadata$' --max-count=1 origin/${GITHUB_REF_NAME})"
+          if [ -n "${metadata_commit}" ] && git merge-base --is-ancestor "${GITHUB_SHA}" "${metadata_commit}"; then
+            ref="${metadata_commit}"
           fi
+
           echo "ref=${ref}" >> "$GITHUB_OUTPUT"
 
       - name: Get release metadata
