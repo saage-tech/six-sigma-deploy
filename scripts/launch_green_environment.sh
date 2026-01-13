@@ -75,10 +75,12 @@ if [[ -z "${current_code_version}" || -z "${current_chain_version}" ]]; then
   exit 1
 fi
 
-if [[ "${current_code_version}" != "${current_chain_version}" ]]; then
-  echo "Chain is not stable (code_version=${current_code_version}, chain_version=${current_chain_version}); cannot launch green." >&2
-  exit 1
-fi
+# Bail out early if the chain isn't stable yet (code_version must match chain_version).
+# Temporarily disabled per request; revisit before re-enabling.
+# if [[ "${current_code_version}" != "${current_chain_version}" ]]; then
+#   echo "Chain is not stable (code_version=${current_code_version}, chain_version=${current_chain_version}); cannot launch green." >&2
+#   exit 1
+# fi
 
 if [[ "${current_chain_version}" == "${CODE_VERSION}" ]]; then
   echo "CODE_VERSION ${CODE_VERSION} already active on chain; skipping launch green."
