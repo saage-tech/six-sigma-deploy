@@ -138,7 +138,15 @@
       "chain_api_url": "https://chain-api.dev.sixsigmasports.app",
       "websocket_server": "wss://kolme-processor-p1.devnet.sixsigmasports.app",
       "green_api_url": "https://green-api-server.devnet.sixsigmasports.app",
-      "green_websocket_server": "wss://kolme-processor-p1.devnet.sixsigmasports.app,wss://kolme-processor-p2.devnet.sixsigmasports.app"
+      "green_websocket_server": "wss://kolme-processor-p1.devnet.sixsigmasports.app,wss://kolme-processor-p2.devnet.sixsigmasports.app",
+      "migrations": {
+        "catalog-and-users-service": {
+          "last_applied": "20251202113200_affiliate_claim_status.sql"
+        },
+        "lsports-broker": {
+          "last_applied": "20251225000000_change_gemini_event_summary_to_jsonb.sql"
+        }
+      }
     },
     "testnet": {
       "chain_api_url": "https://chain-api.testnet.sixsigmasports.app",
